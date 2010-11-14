@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import gobject
+import pynotify
+import dbus_bluetooth as bt
+
+pynotify.init("Bluetooth Monitor")
+
+imageURI = 'file://' + "/usr/share/app-install/icons" + '/bluetooth.png'
+
+def handler_for_device(dev):
+    def handler_inner(name, value):
+        dev_name = dev.GetProperties()["Name"]
+
+        if name == "Connected":
+            msg = "Connected" if value else "Disconnected"
+            n = pynotify.Notification(dev_name, msg, imageURI)
+            n.show()
+
+    return handler_inner
+
+def main():
+    loop = gobject.MainLoop()
+
+    adapter = bt.default_adapter()
+    
+    devices = adapter.GetProperties()['Devices']
+
+    for d in devices:
+        dev = bt.device(d)
+        dev.connect_to_signal("PropertyChanged", handler_for_device(dev))
+
+    loop.run()
+
+if __name__ == '__main__':
+    main()
